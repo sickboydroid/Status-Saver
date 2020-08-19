@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import com.gameofcoding.spy.utils.*;
 import java.io.File;
 import org.apache.http.conn.scheme.SocketFactory;
 

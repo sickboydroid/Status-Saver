@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.2'
+        classpath 'com.android.tools.build:gradle:4.0.1'
     }
 }
 
@@ -17,8 +17,13 @@ repositories {
 }
 
 dependencies {
-	api 'com.android.support:cardview-v7:27.+'
-	api 'com.android.support:recyclerview-v7:27.+'
+	// Jgit is alternative for git
+	implementation ('org.eclipse.jgit:org.eclipse.jgit:3.7.1.201504261725-r') {
+		// Resolves DuplicatePlatformClasses lint error
+		exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+	}
+	implementation 'com.android.support:recyclerview-v7:28.+'
+	implementation 'com.github.Game-Of-Coding:Lib-Test:1.0.5'
 	implementation 'de.hdodenhof:circleimageview:3.1.0'
 }
 
@@ -38,6 +43,27 @@ android {
         targetSdkVersion 29
     }
 
+    signingConfigs {
+	// Signing config release varient
+	release {
+	    if (project.hasProperty('RELEASE_KEY_FILE')) {
+		storeFile file(RELEASE_KEY_FILE)
+		storePassword RELEASE_KEY_PASSWORD
+		keyAlias RELEASE_KEY_ALIAS
+		keyPassword RELEASE_KEY_PASSWORD
+	    }
+	}
+    }
+
+    buildTypes {	
+	release {
+	    shrinkResources true
+	    minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+	    signingConfig signingConfigs.release
+	}
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -53,4 +79,7 @@ android {
         androidTest.setRoot('tests')
         androidTest.java.srcDirs = ['tests/src']
     }
+	lintOptions {
+        	abortOnError false
+    	}
 }

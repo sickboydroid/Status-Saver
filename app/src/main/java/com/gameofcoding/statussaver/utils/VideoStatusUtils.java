@@ -1,10 +1,12 @@
 package com.gameofcoding.statussaver.utils;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import java.io.File;
 import java.net.URLConnection;
+import com.gameofcoding.spy.utils.*;
 
 public class VideoStatusUtils {
 	private static String TAG = "VideoStatusUtils";
