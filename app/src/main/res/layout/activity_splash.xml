@@ -5,12 +5,23 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical">
-  <de.hdodenhof.circleimageview.CircleImageView
-      android:layout_width="250dp"
-      android:layout_height="250dp"
-      android:layout_margin="8dp"
-      android:src="@drawable/sickboy"
-      android:scaleType="centerCrop"/>
+  <RelativeLayout
+      android:layout_height="wrap_content"
+      android:layout_width="match_parent"
+      android:gravity="center_horizontal">
+    <de.hdodenhof.circleimageview.CircleImageView
+	android:id="@+id/img1"
+	android:layout_width="150dp"
+	android:layout_height="150dp"
+	android:src="@drawable/murtaza"/>
+    <de.hdodenhof.circleimageview.CircleImageView
+	android:layout_width="150dp"
+	android:layout_height="150dp"
+	android:src="@drawable/junaid"
+	android:layout_marginLeft="-80dp"
+	android:layout_alignLeft="@id/img1"
+	android:layout_alignRight="@id/img1"/>
+  </RelativeLayout>
   <TextView
       android:layout_width="match_parent"
       android:layout_height="wrap_content"

@@ -1,180 +1,84 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
 
-# Compiles whole android project
-compile_proj () {
-    clear
-    # Generare build and other necessary directrories if they don't exist
-    [ ! -d "app/build/bin" ] && mkdir -p app/build/bin
-    [ ! -d "app/build/gen" ] && mkdir -p app/build/gen
-    [ ! -d "app/build/obj" ] && mkdir -p app/build/obj
-    [ ! -f "app/src/main/AndroidManifest.xml" ] && mkdir -p app/src/main/AndroidManifest.xml
-    [ ! -d "app/src/main/res" ] && mkdir -p app/src/main/res
-    [ ! -d "app/src/main/java" ] && mkdir -p app/src/main/java
-    [ ! -d "app/src/main/assets" ] && mkdir -p app/src/main/assets
-    
-    # Generate R.java for resources
-    echo "Generating <R.java>..."
-    aapt package -f -m \
-       	-M "app/src/main/AndroidManifest.xml" \
-       	-J "app/build/gen" \
-       	-S "app/src/main/res"
-    if [ $? -ne 0 ]
-    then
-	echo "--------------------------"
-	return -1
-    fi
-    printf "done\n\n"
-
-    # Compile java files
-    echo "Compile <java> code..."
-    ecj -d app/build/obj app/build/gen app/src/main/java
-    if [ $? -ne 0 ]
-    then
-	return -1
-    fi
-    printf "done\n\n"
-
-    # Convert java bite code to dx
-    echo "Dexing <java> code..."
-    dx --dex --output=app/build/bin/classes.dex app/build/obj
-    if [ $? -ne 0 ]
-    then
-	echo "--------------------------"
-	return -1
-    fi
-    printf "done\n\n"
-
-    # Create resource.apk from res folder
-    echo "Creating <resources> archive..."
-    aapt package -f \
-	 --min-sdk-version 19 \
-	 --target-sdk-version 29 \
-       	-M app/src/main/AndroidManifest.xml \
-       	-S app/src/main/res \
-       	-A app/src/main/assets \
-       	-F app/build/bin/"resources.apk"
-    if [ $? -ne 0 ]
-    then
-	echo "--------------------------"
-	return -1
-    fi
-    printf "done\n\n"
-
-    cd app/build/bin
-    # Add generated dex file to resources
-    echo "Generating <apk> file..."
-    aapt add -f "resources.apk" "classes.dex"
-    if [ $? -ne 0 ]
-    then
-	echo "--------------------------"
-	return -1
-    fi
-    cp resources.apk app-unsigned.apk
-    printf "done\n\n"
-
-    # Sign apk file
-    echo "Signing <apk> file..."
-    apksigner -p "gameofcoding" "app-debug.key" "app-unsigned.apk" "app-signed.apk"
-    if [ $? -ne 0 ]
-    then
-	echo "--------------------------"
-	return -1
-    fi
-    printf "done\n\n"
-
-    # Prompt for install
-    echo "Installing <apk> file..."
-    cp app-signed.apk /sdcard/SickBoyDir/temp
-    am broadcast \
-       -a com.gameofcoding.devcolleague.INSTALL_APP \
-       --es app_path "/sdcard/SickBoyDir/temp/app-signed.apk" \
-       -n com.gameofcoding.devcolleague/.broadcasts.HelperBroadcastsReceiver > /dev/null
-    printf "done\n\n"
-    cd ../../..
+update_proj () {
+    echo "========[$1] [Updating]=========="
+    git pull
+    echo "==============Done==============="  
 }
 
-# Uploads proj
-upload_proj () {
-    printf 'Copying project...'
-    # Remove prevoius source code
-    rm -r "$1/source/"*
-    # Copy source code to external directory
-    cp -r * "$1/source"
-    cd "$1/source"
-    # Remove this file 'dev' and copy file 'remote_dev' to copied source code
-    rm dev
-    cp ~/.android/assets/remote_dev ./dev
-    printf 'Done\n\n'
-    
+upload_outputs_release () {
+    # Copy outputs
+    printf "Copying project outputs..."
+    cp app/build/outputs/apk/release/app-release.apk "$1"
+    cp -r app/build/reports "$1"
+
     # Commit and push changes to remote repository
     echo '---------Uploading-----------'
+    cd "$1"
     git add -A
     git commit -m "commit at $(date  +"%I:%M %p")"
     git push -f
     echo '-----------Done--------------'
 }
 
-# Downloads output of proj
-download_outputs () {
-    # Download Outputs
-    echo "===============Downloading outputs============"
-    cd "$1/outputs"
-    git pull
-    echo "=============================================="
+upload_outputs_debug () {
+    # Copy outputs
+    printf "Copying project outputs..."
+    cp app/build/outputs/apk/debug/app-debug.apk "$1"
+    cp -r app/build/reports "$1"
 
-    # Copy files to internal storage.
-    cp -r * /sdcard/SickBoyDir/temp
+    # Commit and push changes to remote repository
+    echo '---------Uploading-----------'
+    cd "$1"
+    git add -A
+    git commit -m "commit at $(date  +"%I:%M %p")"
+    git push -f
+    echo '-----------Done--------------'
 }
 
-
-# Installs app
-install_app () { 
-    # Prompt for install
-    echo "Installing..."
-    am broadcast \
-       -a com.gameofcoding.devcolleague.INSTALL_APP \
-       --es app_path "/sdcard/SickBoyDir/temp/app-debug.apk" \
-       -n com.gameofcoding.devcolleague/.broadcasts.HelperBroadcastsReceiver > /dev/null
-    printf "Done\n\n"
+build_proj () {
+	echo "======================"
+	./gradlew assembleDebug
+	if [ $? -ne 0]; then
+		return 1
+	fi
+	echo "======================"
 }
-
-# Shows problems like errors, lints, etc.
-show_probs () {
-    # Show probs
-    echo "Showing probs..."
-    am broadcast \
-       -a com.gameofcoding.devcolleague.SHOW_PROBS \
-       -n com.gameofcoding.devcolleague/.broadcasts.HelperBroadcastsReceiver > /dev/null
-    printf "Done\n\n"
-}
-#####################################
+#######################################
 
 # Get name and external dir of project
 PROJECT_NAME=$(basename "$PWD")
-PROJ_EXT_DIR="$HOME/.android/projs/Status Saver"
+PROJ_EXT_DIR="$HOME/.dev/projs/$PROJECT_NAME"
+
+# Create dir or remove code
+if [ ! -d "$PROJ_EXT_DIR" ]
+then
+    mkdir -p "$PROJ_EXT_DIR"
+    echo "Created ext. dir"
+else
+    rm -r "$PROJ_EXT_DIR/"*
+    echo "Removed previous code"
+fi
+
+# Copy repo
+if [ ! -d "$PROJ_EXT_DIR/.git" ]
+then
+    printf "Copying repo..."
+    cp -r $HOME/.dev/assets/git_repo_outputs "$PROJ_EXT_DIR/.git"
+    printf "Done\n"
+fi
 
 case $1 in
-    compile)
-	compile_proj "$PROJECT_NAME"
+    up | update | update_proj)
+	update_proj "$PROJECT_NAME"
 	;;
-    up | upload)
-	upload_proj "$PROJ_EXT_DIR"
+    out_debug | output_debug)
+	upload_outputs_debug "$PROJ_EXT_DIR"
 	;;
-    down | download)
-	download_outputs "$PROJ_EXT_DIR" "$PROJECT_NAME"
-	;;
-    probs | show_probs)
-	if [ "$2" == "true" ]; then
-	     download_outputs "$PROJ_EXT_DIR" "$PROJECT_NAME"
-	fi
-	show_probs
-	;;
-    install | install_app)
-	if [ "$2" == "true" ]; then
-	     download_outputs "$PROJ_EXT_DIR" "$PROJECT_NAME"
-	fi
-	install_app "$PROJECT_NAME"
+    out_release | output_release)
+	upload_outputs_release "$PROJ_EXT_DIR"
 	;;
     *)
-	printf "Falied to manipulate given argument '$1'.\n"
+	printf "[up] [out_debug] or [out_release].\n"
+	;;
 esac
