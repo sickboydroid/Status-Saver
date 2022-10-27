@@ -20,7 +20,7 @@ public abstract class AppConstants {
     //////////////////////////
     @SuppressWarnings("deprecation")
     public static final File EXTERNAL_STORAGE_DIR = Environment.getExternalStorageDirectory();
-	public static final File WHATSAPP_STATUS_DIRECTORY = new File(EXTERNAL_STORAGE_DIR, "/WhatsApp/Media/.Statuses");
+    public static final File WHATSAPP_STATUS_DIRECTORY = new File(EXTERNAL_STORAGE_DIR, "/WhatsApp/Media/.Statuses");
     
     /////////////////////
     // Preference keys //

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+	<!-- Disable the given check in this project -->
+	<issue id="UnusedAttribute" severity="ignore" >
+		<ignore path="AndroidManifest.xml"/>
+	</issue>
+	<issue id="TrustAllX509TrustManager" severity="ignore" />
+</lint>

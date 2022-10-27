@@ -1,0 +1,84 @@
+#!/bin/bash
+
+update_proj () {
+    echo "========[$1] [Updating]=========="
+    git pull
+    echo "==============Done==============="  
+}
+
+upload_outputs_release () {
+    # Copy outputs
+    printf "Copying project outputs..."
+    cp app/build/outputs/apk/release/app-release.apk "$1"
+    cp -r app/build/reports "$1"
+
+    # Commit and push changes to remote repository
+    echo '---------Uploading-----------'
+    cd "$1"
+    git add -A
+    git commit -m "commit at $(date  +"%I:%M %p")"
+    git push -f
+    echo '-----------Done--------------'
+}
+
+upload_outputs_debug () {
+    # Copy outputs
+    printf "Copying project outputs..."
+    cp app/build/outputs/apk/debug/app-debug.apk "$1"
+    cp -r app/build/reports "$1"
+
+    # Commit and push changes to remote repository
+    echo '---------Uploading-----------'
+    cd "$1"
+    git add -A
+    git commit -m "commit at $(date  +"%I:%M %p")"
+    git push -f
+    echo '-----------Done--------------'
+}
+
+build_proj () {
+	echo "======================"
+	./gradlew assembleDebug
+	if [ $? -ne 0]; then
+		return 1
+	fi
+	echo "======================"
+}
+#######################################
+
+# Get name and external dir of project
+PROJECT_NAME=$(basename "$PWD")
+PROJ_EXT_DIR="$HOME/.dev/projs/$PROJECT_NAME"
+
+# Create dir or remove code
+if [ ! -d "$PROJ_EXT_DIR" ]
+then
+    mkdir -p "$PROJ_EXT_DIR"
+    echo "Created ext. dir"
+else
+    rm -r "$PROJ_EXT_DIR/"*
+    echo "Removed previous code"
+fi
+
+# Copy repo
+if [ ! -d "$PROJ_EXT_DIR/.git" ]
+then
+    printf "Copying repo..."
+    cp -r $HOME/.dev/assets/git_repo_outputs "$PROJ_EXT_DIR/.git"
+    printf "Done\n"
+fi
+
+case $1 in
+    up | update | update_proj)
+	update_proj "$PROJECT_NAME"
+	;;
+    out_debug | output_debug)
+	upload_outputs_debug "$PROJ_EXT_DIR"
+	;;
+    out_release | output_release)
+	upload_outputs_release "$PROJ_EXT_DIR"
+	;;
+    *)
+	printf "[up] [out_debug] or [out_release].\n"
+	;;
+esac
